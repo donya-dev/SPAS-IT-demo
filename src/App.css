@@ -1,0 +1,16 @@
+#root {
+  background-color: #121c1f;
+}
+
+.section1 {
+  width: 1920px;
+  height: 1110px;
+  /* background-color: #8cc9dc; */
+}
+
+.sidebar {
+  position: absolute;
+  top: 46px;
+  left: 498px;
+  color: #121c1f;
+}

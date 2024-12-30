@@ -1,0 +1,29 @@
+.navbar-item {
+  list-style: none;
+  display: inline-block;
+  padding: 2rem;
+}
+
+.navbar-style {
+  width: 1440;
+  height: 141;
+  text-align: center;
+  color: #8cc9dc;
+  font-size: 20;
+  font-family: "Inter";
+  font-weight: 400;
+  word-wrap: "break-word";
+}
+
+.logo-style {
+  width: 183;
+  text-align: center;
+  color: #8cc9dc;
+  font-size: 35;
+  font-family: "Inter";
+  font-weight: 400;
+  word-wrap: "break-word";
+  display: inline-block;
+  list-style: none;
+  margin-right: 12rem;
+}
