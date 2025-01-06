@@ -3,14 +3,25 @@
 }
 
 .section1 {
-  width: 1920px;
-  height: 1110px;
-  /* background-color: #8cc9dc; */
+  background-color: #8cc9dc;
+  padding: 10px;
 }
 
 .sidebar {
   position: absolute;
-  top: 46px;
-  left: 498px;
   color: #121c1f;
+}
+
+.sectionOneFirstInfo {
+  color: #121c1f;
+  font-size: 134px;
+  font-family: "Inter";
+  font-family: "700";
+  word-wrap: "break-word";
+  align-self: center;
+  margin: 10px;
+}
+
+.section2 {
+  background-color: #121c1f;
 }

@@ -3,23 +3,23 @@ import { Button } from "@mui/material";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
-import Navbar from "./components/navbar";
-import Logo from "./components/logo";
+import Navbar from "./components/Navbar/Navbar.css";
+import Logo from "./components/Logo/Logo.css";
+import Search from "./components/SearchAndFilter/SearchAndFilter.css";
+import Card from "./components/Card/Card";
 
 function App() {
   return (
     <>
-      <div>
-        {/* <h1>hi</h1>
-        <Button variant="contained">Contained</Button> */}
-      </div>
+      <Navbar>
+        <Logo></Logo>
+      </Navbar>
       <div className="section1">
-        <Navbar>
-          <Logo>
-            <button>j</button>
-          </Logo>
-          <Button variant="contained">Login</Button>
-        </Navbar>
+        <h1 className="sectionOneFirstInfo">
+          Search Smarter, <br />
+          Explore Faster
+        </h1>
+        <Search></Search>
       </div>
     </>
   );

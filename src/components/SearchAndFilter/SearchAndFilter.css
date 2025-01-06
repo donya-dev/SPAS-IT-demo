@@ -1,0 +1,40 @@
+/* Basic table styling */
+.styled-table {
+  width: 50%;
+  border-collapse: collapse; /* Ensures borders do not overlap */
+  margin: 25px 0;
+  font-size: 18px;
+  text-align: left;
+  display: flex;
+}
+
+/* Style for table headers */
+.styled-table tr {
+  background-color: #d9d9d9;
+}
+
+.styled-table td {
+  padding: 12px 15px;
+  border: 1.5px solid #121c1f;
+}
+
+/* Style the dropdown select element inside td */
+.styled-table td select {
+  width: 100%; /* Makes the dropdown take up the entire width of the td */
+  padding: 8px; /* Adds padding inside the dropdown */
+  font-size: 16px; /* Sets font size */
+  background-color: transparent;
+  border: transparent;
+  color: #121c1f;
+  font-weight: bolder;
+}
+
+.styled-table td select option {
+  color: #121c1f;
+  font-size: 20px;
+}
+
+/* Hover effect for rows */
+.styled-table tbody tr:hover {
+  background-color: #ddd; /* Dark grey background on hover */
+}

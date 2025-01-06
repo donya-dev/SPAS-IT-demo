@@ -10,6 +10,12 @@ const Navbar = () => {
         <li className="navbar-item">About</li>
         <li className="navbar-item">Browse</li>
         <li className="navbar-item">Search</li>
+        <li className="button-style-login">
+          <button className="login">Log in</button>
+        </li>
+        <li className="button-style-signup">
+          <button className="signup">Sign up</button>
+        </li>
       </ul>
     </div>
   );
