@@ -1,12 +1,9 @@
-import { useState } from "react";
-import { Button } from "@mui/material";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
 import "./App.css";
-import Navbar from "./components/Navbar/Navbar.css";
-import Logo from "./components/Logo/Logo.css";
-import Search from "./components/SearchAndFilter/SearchAndFilter.css";
+import Navbar from "./components/Navbar/Navbar";
+import Logo from "./components/Logo/Logo";
+// import Search from './components/SearchAndFilter/SearchAndFilter';
 import Card from "./components/Card/Card";
+import Table from "./components/Table/Table";
 
 function App() {
   return (
@@ -19,7 +16,7 @@ function App() {
           Search Smarter, <br />
           Explore Faster
         </h1>
-        <Search></Search>
+        <Table></Table>
       </div>
     </>
   );
