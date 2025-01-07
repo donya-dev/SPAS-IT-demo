@@ -3,6 +3,12 @@ import React, { useState } from "react";
 import IconButton from "@mui/material/IconButton"; // Import IconButton
 import DeleteIcon from "@mui/icons-material/Delete"; // Import Delete icon
 import EditIcon from "@mui/icons-material/Edit"; // Import Edit icon
+import Button from "@mui/material/Button"; // Import Button for Add Row
+import MenuItem from "@mui/material/MenuItem"; // For dropdown items
+import Select from "@mui/material/Select"; // For dropdown select
+import InputLabel from "@mui/material/InputLabel"; // For Input Label
+import FormControl from "@mui/material/FormControl"; // For FormControl wrapper
+import TextField from "@mui/material/TextField"; // For text fields
 
 const Table = () => {
   const initialRows = [
@@ -49,8 +55,19 @@ const Table = () => {
   ];
 
   const [rows, setRows] = useState(initialRows);
-  const [pageSize, setPageSize] = useState(5); // Set the default page size to 5
-  const [editingRow, setEditingRow] = useState(null); // Track the row being edited
+  const [pageSize, setPageSize] = useState(5);
+  const [editingRow, setEditingRow] = useState(null);
+  const [newRow, setNewRow] = useState({
+    projectName: "",
+    teamSize: "",
+    projectType: "",
+    department: "",
+    year: "",
+  });
+  const [showAddRowForm, setShowAddRowForm] = useState(false);
+
+  const projectTypes = ["AI", "WEB", "MOBILE", "GIS"];
+  const departments = ["CS", "MMT", "GIS"];
 
   const columns = [
     { field: "id", headerName: "ID", width: 70 },
@@ -58,7 +75,6 @@ const Table = () => {
       field: "projectName",
       headerName: "Project Name",
       width: 200,
-      editable: editingRow ? editingRow.id === "projectName" : false, // Only editable when in edit mode
     },
     { field: "teamSize", headerName: "Team Size", width: 130 },
     {
@@ -73,21 +89,15 @@ const Table = () => {
     },
     { field: "year", headerName: "Year", width: 100 },
     {
-      field: "action", // Action column to hold the delete and edit icons
+      field: "action",
       headerName: "Action",
       width: 150,
       renderCell: (params) => (
         <div>
-          <IconButton
-            color="primary"
-            onClick={() => handleEditRow(params.id)} // Call edit on button click
-          >
+          <IconButton color="primary" onClick={() => handleEditRow(params.id)}>
             <EditIcon />
           </IconButton>
-          <IconButton
-            color="error"
-            onClick={() => handleDeleteRow(params.id)} // Call delete on button click
-          >
+          <IconButton color="error" onClick={() => handleDeleteRow(params.id)}>
             <DeleteIcon />
           </IconButton>
         </div>
@@ -95,102 +105,264 @@ const Table = () => {
     },
   ];
 
-  // Handle deleting a row when the delete icon is clicked
   const handleDeleteRow = (id) => {
-    // Display confirmation dialog before deletion
     const confirmation = window.confirm(
       "Are you sure you want to delete this row?"
     );
-
     if (confirmation) {
-      // Filter out the row with the given id
       const newRows = rows.filter((row) => row.id !== id);
-      setRows(newRows); // Update the rows state without the deleted row
+      setRows(newRows);
     }
   };
 
-  // Handle editing a row when the edit icon is clicked
   const handleEditRow = (id) => {
     const rowToEdit = rows.find((row) => row.id === id);
-    const confirmation = window.confirm(
-      "Are you sure you want to edit this row?"
-    );
+    setEditingRow(rowToEdit);
+  };
 
+  const handleEditingRowChange = (e) => {
+    const { name, value } = e.target;
+    setEditingRow((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
+  };
+
+  const handleUpdateRow = () => {
+    const confirmation = window.confirm(
+      "Are you sure you want to apply the changes?"
+    );
     if (confirmation) {
-      // Start editing mode for the selected row
-      setEditingRow(rowToEdit);
+      const updatedRows = rows.map((row) =>
+        row.id === editingRow.id ? { ...editingRow } : row
+      );
+      setRows(updatedRows);
+      setEditingRow(null);
     }
   };
 
-  // Handle updating the row after editing
-  const handleUpdateRow = () => {
-    const updatedRows = rows.map((row) =>
-      row.id === editingRow.id ? { ...row, ...editingRow } : row
-    );
-    setRows(updatedRows); // Update the rows state with the edited row
-    setEditingRow(null); // Exit the edit mode
+  const handleAddRowButtonClick = () => {
+    setShowAddRowForm(true);
   };
 
-  // Handle input change for the editing row
-  const handleInputChange = (field, value) => {
-    setEditingRow((prevRow) => ({
-      ...prevRow,
-      [field]: value,
+  const handleNewRowInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewRow((prevState) => ({
+      ...prevState,
+      [name]: value,
     }));
+  };
+
+  const handleAddRow = () => {
+    if (
+      !newRow.projectName ||
+      !newRow.teamSize ||
+      !newRow.projectType ||
+      !newRow.department ||
+      !newRow.year
+    ) {
+      alert("Please fill out all fields before adding the row.");
+      return;
+    }
+
+    const confirmation = window.confirm(
+      "Are you sure you want to add this row?"
+    );
+    if (confirmation) {
+      const newRowWithId = { id: rows.length + 1, ...newRow };
+      setRows([...rows, newRowWithId]);
+      setNewRow({
+        projectName: "",
+        teamSize: "",
+        projectType: "",
+        department: "",
+        year: "",
+      });
+      setShowAddRowForm(false);
+    }
   };
 
   return (
     <div style={{ padding: "20px" }}>
-      <div style={{ height: 400, width: "100%" }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          pageSize={pageSize} // Control the page size
-          rowsPerPageOptions={[5, 10, 15]} // Rows per page options
-          checkboxSelection
-          sx={{ border: 0 }}
-          onPageSizeChange={(newSize) => setPageSize(newSize)} // Handle page size change
-        />
-      </div>
+      {!showAddRowForm && (
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleAddRowButtonClick}
+        >
+          Add Row
+        </Button>
+      )}
 
-      {editingRow && (
+      {showAddRowForm && (
         <div>
-          <h3>Edit Row</h3>
-          <div>
-            <input
-              type="text"
-              value={editingRow.projectName}
-              onChange={(e) => handleInputChange("projectName", e.target.value)}
-              placeholder="Project Name"
-            />
-            <input
-              type="number"
-              value={editingRow.teamSize}
-              onChange={(e) => handleInputChange("teamSize", e.target.value)}
-              placeholder="Team Size"
-            />
-            <input
-              type="text"
-              value={editingRow.projectType}
-              onChange={(e) => handleInputChange("projectType", e.target.value)}
-              placeholder="Project Type"
-            />
-            <input
-              type="text"
-              value={editingRow.department}
-              onChange={(e) => handleInputChange("department", e.target.value)}
-              placeholder="Department"
-            />
-            <input
-              type="number"
-              value={editingRow.year}
-              onChange={(e) => handleInputChange("year", e.target.value)}
-              placeholder="Year"
-            />
-            <button onClick={handleUpdateRow}>Confirm Update</button>
+          <h3>Add New Row</h3>
+          <TextField
+            label="Project Name"
+            name="projectName"
+            value={newRow.projectName}
+            onChange={handleNewRowInputChange}
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="Team Size"
+            name="teamSize"
+            type="number"
+            value={newRow.teamSize}
+            onChange={handleNewRowInputChange}
+            fullWidth
+            margin="normal"
+          />
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Project Type</InputLabel>
+            <Select
+              name="projectType"
+              value={newRow.projectType}
+              onChange={handleNewRowInputChange}
+              label="Project Type"
+            >
+              {projectTypes.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Department</InputLabel>
+            <Select
+              name="department"
+              value={newRow.department}
+              onChange={handleNewRowInputChange}
+              label="Department"
+            >
+              {departments.map((dept) => (
+                <MenuItem key={dept} value={dept}>
+                  {dept}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            label="Year"
+            name="year"
+            type="number"
+            value={newRow.year}
+            onChange={handleNewRowInputChange}
+            fullWidth
+            margin="normal"
+          />
+          <div style={{ marginTop: "10px" }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleAddRow}
+            >
+              Confirm Add
+            </Button>
+            <Button
+              variant="outlined"
+              color="default"
+              onClick={() => setShowAddRowForm(false)}
+              style={{ marginLeft: "10px" }}
+            >
+              Cancel
+            </Button>
           </div>
         </div>
       )}
+
+      {editingRow && (
+        <div style={{ marginTop: "20px" }}>
+          <h3>Edit Row</h3>
+          <TextField
+            label="Project Name"
+            name="projectName"
+            value={editingRow.projectName}
+            onChange={handleEditingRowChange}
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="Team Size"
+            name="teamSize"
+            type="number"
+            value={editingRow.teamSize}
+            onChange={handleEditingRowChange}
+            fullWidth
+            margin="normal"
+          />
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Project Type</InputLabel>
+            <Select
+              name="projectType"
+              value={editingRow.projectType}
+              onChange={handleEditingRowChange}
+              label="Project Type"
+            >
+              {projectTypes.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Department</InputLabel>
+            <Select
+              name="department"
+              value={editingRow.department}
+              onChange={handleEditingRowChange}
+              label="Department"
+            >
+              {departments.map((dept) => (
+                <MenuItem key={dept} value={dept}>
+                  {dept}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            label="Year"
+            name="year"
+            type="number"
+            value={editingRow.year}
+            onChange={handleEditingRowChange}
+            fullWidth
+            margin="normal"
+          />
+          <div style={{ marginTop: "10px" }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleUpdateRow}
+            >
+              Update Row
+            </Button>
+            <Button
+              variant="outlined"
+              color="default"
+              onClick={() => setEditingRow(null)}
+              style={{ marginLeft: "10px" }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ height: 400, width: "100%", marginTop: "20px" }}>
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          pageSize={pageSize}
+          rowsPerPageOptions={[5, 10, 15]}
+          checkboxSelection
+          sx={{ border: 0 }}
+          onPageSizeChange={(newSize) => setPageSize(newSize)}
+        />
+      </div>
     </div>
   );
 };
