@@ -1,14 +1,17 @@
 import { DataGrid } from "@mui/x-data-grid";
-import React, { useState } from "react";
-import IconButton from "@mui/material/IconButton"; // Import IconButton
-import DeleteIcon from "@mui/icons-material/Delete"; // Import Delete icon
-import EditIcon from "@mui/icons-material/Edit"; // Import Edit icon
-import Button from "@mui/material/Button"; // Import Button for Add Row
-import MenuItem from "@mui/material/MenuItem"; // For dropdown items
-import Select from "@mui/material/Select"; // For dropdown select
-import InputLabel from "@mui/material/InputLabel"; // For Input Label
-import FormControl from "@mui/material/FormControl"; // For FormControl wrapper
-import TextField from "@mui/material/TextField"; // For text fields
+import React, { useState, useMemo } from "react";
+import IconButton from "@mui/material/IconButton";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import Button from "@mui/material/Button";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import InputLabel from "@mui/material/InputLabel";
+import FormControl from "@mui/material/FormControl";
+import TextField from "@mui/material/TextField";
+import Alert from "@mui/material/Alert";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
 const Table = () => {
   const initialRows = [
@@ -57,53 +60,43 @@ const Table = () => {
   const [rows, setRows] = useState(initialRows);
   const [pageSize, setPageSize] = useState(5);
   const [editingRow, setEditingRow] = useState(null);
-  const [newRow, setNewRow] = useState({
-    projectName: "",
-    teamSize: "",
-    projectType: "",
-    department: "",
-    year: "",
-  });
   const [showAddRowForm, setShowAddRowForm] = useState(false);
 
-  const projectTypes = ["AI", "WEB", "MOBILE", "GIS"];
-  const departments = ["CS", "MMT", "GIS"];
+  const projectTypes = useMemo(() => ["AI", "WEB", "MOBILE", "GIS"], []);
+  const departments = useMemo(() => ["CS", "MMT", "GIS"], []);
 
-  const columns = [
-    { field: "id", headerName: "ID", width: 70 },
-    {
-      field: "projectName",
-      headerName: "Project Name",
-      width: 200,
-    },
-    { field: "teamSize", headerName: "Team Size", width: 130 },
-    {
-      field: "projectType",
-      headerName: "Project Type",
-      width: 130,
-    },
-    {
-      field: "department",
-      headerName: "Department",
-      width: 150,
-    },
-    { field: "year", headerName: "Year", width: 100 },
-    {
-      field: "action",
-      headerName: "Action",
-      width: 150,
-      renderCell: (params) => (
-        <div>
-          <IconButton color="primary" onClick={() => handleEditRow(params.id)}>
-            <EditIcon />
-          </IconButton>
-          <IconButton color="error" onClick={() => handleDeleteRow(params.id)}>
-            <DeleteIcon />
-          </IconButton>
-        </div>
-      ),
-    },
-  ];
+  const columns = useMemo(
+    () => [
+      { field: "id", headerName: "ID", width: 70 },
+      { field: "projectName", headerName: "Project Name", width: 200 },
+      { field: "teamSize", headerName: "Team Size", width: 130 },
+      { field: "projectType", headerName: "Project Type", width: 130 },
+      { field: "department", headerName: "Department", width: 150 },
+      { field: "year", headerName: "Year", width: 100 },
+      {
+        field: "action",
+        headerName: "Action",
+        width: 150,
+        renderCell: (params) => (
+          <div>
+            <IconButton
+              color="primary"
+              onClick={() => handleEditRow(params.id)}
+            >
+              <EditIcon />
+            </IconButton>
+            <IconButton
+              color="error"
+              onClick={() => handleDeleteRow(params.id)}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </div>
+        ),
+      },
+    ],
+    []
+  );
 
   const handleDeleteRow = (id) => {
     const confirmation = window.confirm(
@@ -141,214 +134,155 @@ const Table = () => {
     }
   };
 
-  const handleAddRowButtonClick = () => {
-    setShowAddRowForm(true);
-  };
-
-  const handleNewRowInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewRow((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
-  };
-
-  const handleAddRow = () => {
-    if (
-      !newRow.projectName ||
-      !newRow.teamSize ||
-      !newRow.projectType ||
-      !newRow.department ||
-      !newRow.year
-    ) {
-      alert("Please fill out all fields before adding the row.");
-      return;
-    }
-
-    const confirmation = window.confirm(
-      "Are you sure you want to add this row?"
-    );
-    if (confirmation) {
-      const newRowWithId = { id: rows.length + 1, ...newRow };
-      setRows([...rows, newRowWithId]);
-      setNewRow({
-        projectName: "",
-        teamSize: "",
-        projectType: "",
-        department: "",
-        year: "",
-      });
-      setShowAddRowForm(false);
-    }
-  };
+  const formik = useFormik({
+    initialValues: {
+      projectName: "",
+      teamSize: "",
+      projectType: "",
+      department: "",
+      year: "",
+    },
+    validationSchema: Yup.object({
+      projectName: Yup.string().required("Project name is required"),
+      teamSize: Yup.number()
+        .required("Team size is required")
+        .positive()
+        .integer(),
+      projectType: Yup.string().required("Project type is required"),
+      department: Yup.string().required("Department is required"),
+      year: Yup.number()
+        .required("Year is required")
+        .min(2020, "Year must be 2020 or later")
+        .max(2025, "Year can't be later than 2025"),
+    }),
+    onSubmit: (values) => {
+      const confirmation = window.confirm(
+        "Are you sure you want to add this row?"
+      );
+      if (confirmation) {
+        const newRowWithId = { id: rows.length + 1, ...values };
+        setRows([...rows, newRowWithId]);
+        formik.resetForm();
+        setShowAddRowForm(false);
+      }
+    },
+  });
 
   return (
     <div style={{ padding: "20px" }}>
       {!showAddRowForm && (
         <Button
           variant="contained"
+          onClick={() => setShowAddRowForm(true)}
           color="primary"
-          onClick={handleAddRowButtonClick}
         >
-          Add Row
+          Add Project
         </Button>
       )}
 
       {showAddRowForm && (
         <div>
           <h3>Add New Row</h3>
-          <TextField
-            label="Project Name"
-            name="projectName"
-            value={newRow.projectName}
-            onChange={handleNewRowInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Team Size"
-            name="teamSize"
-            type="number"
-            value={newRow.teamSize}
-            onChange={handleNewRowInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Project Type</InputLabel>
-            <Select
-              name="projectType"
-              value={newRow.projectType}
-              onChange={handleNewRowInputChange}
-              label="Project Type"
-            >
-              {projectTypes.map((type) => (
-                <MenuItem key={type} value={type}>
-                  {type}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Department</InputLabel>
-            <Select
-              name="department"
-              value={newRow.department}
-              onChange={handleNewRowInputChange}
-              label="Department"
-            >
-              {departments.map((dept) => (
-                <MenuItem key={dept} value={dept}>
-                  {dept}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TextField
-            label="Year"
-            name="year"
-            type="number"
-            value={newRow.year}
-            onChange={handleNewRowInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <div style={{ marginTop: "10px" }}>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={handleAddRow}
-            >
-              Confirm Add
-            </Button>
-            <Button
-              variant="outlined"
-              color="default"
-              onClick={() => setShowAddRowForm(false)}
-              style={{ marginLeft: "10px" }}
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {editingRow && (
-        <div style={{ marginTop: "20px" }}>
-          <h3>Edit Row</h3>
-          <TextField
-            label="Project Name"
-            name="projectName"
-            value={editingRow.projectName}
-            onChange={handleEditingRowChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Team Size"
-            name="teamSize"
-            type="number"
-            value={editingRow.teamSize}
-            onChange={handleEditingRowChange}
-            fullWidth
-            margin="normal"
-          />
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Project Type</InputLabel>
-            <Select
-              name="projectType"
-              value={editingRow.projectType}
-              onChange={handleEditingRowChange}
-              label="Project Type"
-            >
-              {projectTypes.map((type) => (
-                <MenuItem key={type} value={type}>
-                  {type}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Department</InputLabel>
-            <Select
-              name="department"
-              value={editingRow.department}
-              onChange={handleEditingRowChange}
-              label="Department"
-            >
-              {departments.map((dept) => (
-                <MenuItem key={dept} value={dept}>
-                  {dept}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TextField
-            label="Year"
-            name="year"
-            type="number"
-            value={editingRow.year}
-            onChange={handleEditingRowChange}
-            fullWidth
-            margin="normal"
-          />
-          <div style={{ marginTop: "10px" }}>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={handleUpdateRow}
-            >
-              Update Row
-            </Button>
-            <Button
-              variant="outlined"
-              color="default"
-              onClick={() => setEditingRow(null)}
-              style={{ marginLeft: "10px" }}
-            >
-              Cancel
-            </Button>
-          </div>
+          {formik.errors.projectName ||
+          formik.errors.year ||
+          formik.errors.teamSize ? (
+            <Alert severity="error">
+              {Object.values(formik.errors).join(", ")}
+            </Alert>
+          ) : null}
+          <form onSubmit={formik.handleSubmit}>
+            <TextField
+              label="Project Name"
+              name="projectName"
+              value={formik.values.projectName}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              fullWidth
+              margin="normal"
+              error={
+                formik.touched.projectName && Boolean(formik.errors.projectName)
+              }
+              helperText={
+                formik.touched.projectName && formik.errors.projectName
+              }
+            />
+            <TextField
+              label="Team Size"
+              name="teamSize"
+              type="number"
+              value={formik.values.teamSize}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              fullWidth
+              margin="normal"
+              error={formik.touched.teamSize && Boolean(formik.errors.teamSize)}
+              helperText={formik.touched.teamSize && formik.errors.teamSize}
+            />
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Project Type</InputLabel>
+              <Select
+                name="projectType"
+                value={formik.values.projectType}
+                onChange={formik.handleChange}
+                label="Project Type"
+                onBlur={formik.handleBlur}
+                error={
+                  formik.touched.projectType &&
+                  Boolean(formik.errors.projectType)
+                }
+              >
+                {projectTypes.map((type) => (
+                  <MenuItem key={type} value={type}>
+                    {type}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Department</InputLabel>
+              <Select
+                name="department"
+                value={formik.values.department}
+                onChange={formik.handleChange}
+                label="Department"
+                onBlur={formik.handleBlur}
+                error={
+                  formik.touched.department && Boolean(formik.errors.department)
+                }
+              >
+                {departments.map((dept) => (
+                  <MenuItem key={dept} value={dept}>
+                    {dept}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField
+              label="Year"
+              name="year"
+              type="number"
+              value={formik.values.year}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              fullWidth
+              margin="normal"
+              error={formik.touched.year && Boolean(formik.errors.year)}
+              helperText={formik.touched.year && formik.errors.year}
+            />
+            <div style={{ marginTop: "10px" }}>
+              <Button variant="contained" color="secondary" type="submit">
+                Confirm Add
+              </Button>
+              <Button
+                variant="outlined"
+                color="default"
+                onClick={() => setShowAddRowForm(false)}
+                style={{ marginLeft: "10px" }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
         </div>
       )}
 

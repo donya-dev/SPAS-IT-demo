@@ -1,0 +1,11 @@
+.add-project {
+  background-color: #121c1f;
+  color: #8cc9dc;
+  font-weight: bolder;
+  font-family: "Inter";
+}
+
+.add-project :hover {
+  background-color: #8cc9dc;
+  color: #121c1f;
+}
