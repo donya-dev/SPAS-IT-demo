@@ -1,21 +1,16 @@
 import { DataGrid } from "@mui/x-data-grid";
 import React, { useState, useMemo } from "react";
-import {
-  IconButton,
-  Button,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
-  TextField,
-  Modal,
-  Box,
-  Typography,
-} from "@mui/material";
+import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import Button from "@mui/material/Button";
+import Modal from "@mui/material/Modal";
+import Box from "@mui/material/Box";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import "./table.css";
 
 const Table = () => {
   const initialRows = [
@@ -25,15 +20,15 @@ const Table = () => {
       teamSize: 4,
       projectType: "AI",
       department: "CS",
-      year: 2023,
+      year: "2023/2024",
     },
     {
       id: 2,
       projectName: "Web Portal for Students",
-      teamSize: 5,
+      teamSize: 4,
       projectType: "WEB",
       department: "CS",
-      year: 2024,
+      year: "2022/2023",
     },
     {
       id: 3,
@@ -41,15 +36,15 @@ const Table = () => {
       teamSize: 3,
       projectType: "GIS",
       department: "GIS",
-      year: 2022,
+      year: "2021/2022",
     },
     {
       id: 4,
       projectName: "Mobile App for Events",
-      teamSize: 6,
+      teamSize: 4,
       projectType: "MOBILE",
       department: "MMT",
-      year: 2021,
+      year: "2020/2021",
     },
     {
       id: 5,
@@ -57,19 +52,88 @@ const Table = () => {
       teamSize: 4,
       projectType: "AI",
       department: "CS",
-      year: 2020,
+      year: "2024/2025",
     },
   ];
 
   const [rows, setRows] = useState(initialRows);
-  const [pageSize, setPageSize] = useState(5);
-  const [editingRow, setEditingRow] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteRowId, setDeleteRowId] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingRow, setEditingRow] = useState(null);
+  const [deletingRowId, setDeletingRowId] = useState(null);
 
-  const projectTypes = useMemo(() => ["AI", "WEB", "MOBILE", "GIS"], []);
-  const departments = useMemo(() => ["CS", "MMT", "GIS"], []);
+  const validationSchema = Yup.object({
+    projectName: Yup.string().required("Project name is required"),
+    teamSize: Yup.number().min(3).max(4).required("Team size is required"),
+    year: Yup.string()
+      .matches(/^(20\d{2}\/20\d{2})$/, "Year must be in format YYYY/YYYY")
+      .test(
+        "valid-range",
+        "Year must be between 2008/2009 and 2024/2025",
+        (value) => {
+          const [start, end] = value.split("/").map(Number);
+          return start >= 2008 && end <= 2025 && end === start + 1;
+        }
+      )
+      .required("Year is required"),
+  });
+
+  const handleEditRow = (row) => {
+    setEditingRow(row);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteRow = (id) => {
+    setDeletingRowId(id);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setRows((prevRows) => prevRows.filter((row) => row.id !== deletingRowId));
+    setShowDeleteModal(false);
+  };
+
+  const handleAddProject = () => {
+    setShowAddModal(true);
+  };
+
+  const formikEdit = useFormik({
+    initialValues: {
+      projectName: editingRow?.projectName || "",
+      teamSize: editingRow?.teamSize || "",
+      year: editingRow?.year || "",
+    },
+    enableReinitialize: true,
+    validationSchema,
+    onSubmit: (values) => {
+      setRows((prevRows) =>
+        prevRows.map((row) =>
+          row.id === editingRow.id ? { ...row, ...values } : row
+        )
+      );
+      setShowEditModal(false);
+    },
+  });
+
+  const formikAdd = useFormik({
+    initialValues: {
+      projectName: "",
+      teamSize: "",
+      year: "",
+    },
+    validationSchema,
+    onSubmit: (values) => {
+      const newRow = {
+        id: rows.length + 1,
+        ...values,
+        projectType: "NEW",
+        department: "NEW",
+      };
+      setRows((prevRows) => [...prevRows, newRow]);
+      setShowAddModal(false);
+    },
+  });
 
   const columns = useMemo(
     () => [
@@ -78,7 +142,7 @@ const Table = () => {
       { field: "teamSize", headerName: "Team Size", width: 130 },
       { field: "projectType", headerName: "Project Type", width: 130 },
       { field: "department", headerName: "Department", width: 150 },
-      { field: "year", headerName: "Year", width: 100 },
+      { field: "year", headerName: "Year", width: 130 },
       {
         field: "action",
         headerName: "Action",
@@ -87,13 +151,13 @@ const Table = () => {
           <div>
             <IconButton
               color="primary"
-              onClick={() => handleEditRow(params.id)}
+              onClick={() => handleEditRow(params.row)}
             >
               <EditIcon />
             </IconButton>
             <IconButton
               color="error"
-              onClick={() => handleOpenDeleteModal(params.id)}
+              onClick={() => handleDeleteRow(params.id)}
             >
               <DeleteIcon />
             </IconButton>
@@ -101,156 +165,210 @@ const Table = () => {
         ),
       },
     ],
-    [rows]
+    []
   );
-
-  const handleOpenDeleteModal = (id) => {
-    setDeleteRowId(id);
-    setShowDeleteModal(true);
-  };
-
-  const handleDeleteRow = () => {
-    setRows(rows.filter((row) => row.id !== deleteRowId));
-    setShowDeleteModal(false);
-  };
-
-  const handleEditRow = (id) => {
-    const rowToEdit = rows.find((row) => row.id === id);
-    setEditingRow(rowToEdit);
-    setShowEditModal(true);
-  };
-
-  const handleEditingRowChange = (e) => {
-    const { name, value } = e.target;
-    setEditingRow((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
-  };
-
-  const handleUpdateRow = () => {
-    setRows(rows.map((row) => (row.id === editingRow.id ? editingRow : row)));
-    setShowEditModal(false);
-  };
 
   return (
     <div style={{ padding: "20px" }}>
-      <div style={{ height: 400, width: "100%", marginTop: "20px" }}>
+      {/* Add Project Button */}
+      <Button
+        className="add-button"
+        onClick={handleAddProject}
+        variant="contained"
+        color="primary"
+      >
+        Add Project
+      </Button>
+
+      {/* DataGrid */}
+      <div
+        style={{ height: 400, width: "100%" }}
+        className="data-grid-container"
+      >
         <DataGrid
           rows={rows}
           columns={columns}
-          pageSize={pageSize}
+          pageSize={5}
           rowsPerPageOptions={[5, 10, 15]}
           checkboxSelection
-          onPageSizeChange={(newSize) => setPageSize(newSize)}
+          sx={{ border: 0 }}
         />
       </div>
 
       {/* Edit Modal */}
       <Modal open={showEditModal} onClose={() => setShowEditModal(false)}>
-        <Box sx={modalStyle}>
-          <Typography variant="h6">Edit Row</Typography>
-          <TextField
-            label="Project Name"
-            name="projectName"
-            value={editingRow?.projectName || ""}
-            onChange={handleEditingRowChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Team Size"
-            name="teamSize"
-            type="number"
-            value={editingRow?.teamSize || ""}
-            onChange={handleEditingRowChange}
-            fullWidth
-            margin="normal"
-          />
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Project Type</InputLabel>
-            <Select
-              name="projectType"
-              value={editingRow?.projectType || ""}
-              onChange={handleEditingRowChange}
-            >
-              {projectTypes.map((type) => (
-                <MenuItem key={type} value={type}>
-                  {type}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Department</InputLabel>
-            <Select
-              name="department"
-              value={editingRow?.department || ""}
-              onChange={handleEditingRowChange}
-            >
-              {departments.map((dept) => (
-                <MenuItem key={dept} value={dept}>
-                  {dept}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TextField
-            label="Year"
-            name="year"
-            type="number"
-            value={editingRow?.year || ""}
-            onChange={handleEditingRowChange}
-            fullWidth
-            margin="normal"
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleUpdateRow}
-            style={{ marginTop: "10px" }}
-          >
-            Save Changes
-          </Button>
+        <Box className="modal-box">
+          <Typography className="modal-header">Edit Row</Typography>
+          <form onSubmit={formikEdit.handleSubmit}>
+            <TextField
+              label={
+                <span>
+                  Project Name <span style={{ color: "red" }}>*</span>
+                </span>
+              }
+              name="projectName"
+              value={formikEdit.values.projectName}
+              onChange={formikEdit.handleChange}
+              onBlur={formikEdit.handleBlur}
+              fullWidth
+              margin="normal"
+              error={
+                formikEdit.touched.projectName &&
+                Boolean(formikEdit.errors.projectName)
+              }
+              helperText={
+                formikEdit.touched.projectName && formikEdit.errors.projectName
+              }
+            />
+            <TextField
+              label={
+                <span>
+                  Team Size <span style={{ color: "red" }}>*</span>
+                </span>
+              }
+              name="teamSize"
+              type="number"
+              value={formikEdit.values.teamSize}
+              onChange={formikEdit.handleChange}
+              onBlur={formikEdit.handleBlur}
+              fullWidth
+              margin="normal"
+              error={
+                formikEdit.touched.teamSize &&
+                Boolean(formikEdit.errors.teamSize)
+              }
+              helperText={
+                formikEdit.touched.teamSize && formikEdit.errors.teamSize
+              }
+            />
+            <TextField
+              label={
+                <span>
+                  Year <span style={{ color: "red" }}>*</span>
+                </span>
+              }
+              name="year"
+              value={formikEdit.values.year}
+              onChange={formikEdit.handleChange}
+              onBlur={formikEdit.handleBlur}
+              fullWidth
+              margin="normal"
+              error={formikEdit.touched.year && Boolean(formikEdit.errors.year)}
+              helperText={formikEdit.touched.year && formikEdit.errors.year}
+            />
+            <div style={{ marginTop: "10px" }}>
+              <Button className="modal-button save-button" type="submit">
+                Save Changes
+              </Button>
+              <Button
+                className="modal-button cancel-button"
+                onClick={() => setShowEditModal(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
         </Box>
       </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal open={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
-        <Box sx={modalStyle}>
-          <Typography variant="h6">Confirm Delete</Typography>
+        <Box className="modal-box">
+          <Typography className="modal-header">Confirm Delete</Typography>
           <Typography>Are you sure you want to delete this row?</Typography>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleDeleteRow}
-            style={{ marginTop: "10px" }}
-          >
-            Delete
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={() => setShowDeleteModal(false)}
-            style={{ marginLeft: "10px", marginTop: "10px" }}
-          >
-            Cancel
-          </Button>
+          <div style={{ marginTop: "10px" }}>
+            <Button
+              className="modal-button delete-button"
+              onClick={handleConfirmDelete}
+            >
+              Confirm
+            </Button>
+            <Button
+              className="modal-button cancel-button"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </Box>
+      </Modal>
+
+      {/* Add Project Modal */}
+      <Modal open={showAddModal} onClose={() => setShowAddModal(false)}>
+        <Box className="modal-box">
+          <Typography className="modal-header">Add New Project</Typography>
+          <form onSubmit={formikAdd.handleSubmit}>
+            <TextField
+              label={
+                <span>
+                  Project Name <span style={{ color: "red" }}>*</span>
+                </span>
+              }
+              name="projectName"
+              value={formikAdd.values.projectName}
+              onChange={formikAdd.handleChange}
+              onBlur={formikAdd.handleBlur}
+              fullWidth
+              margin="normal"
+              error={
+                formikAdd.touched.projectName &&
+                Boolean(formikAdd.errors.projectName)
+              }
+              helperText={
+                formikAdd.touched.projectName && formikAdd.errors.projectName
+              }
+            />
+            <TextField
+              label={
+                <span>
+                  Team Size <span style={{ color: "red" }}>*</span>
+                </span>
+              }
+              name="teamSize"
+              type="number"
+              value={formikAdd.values.teamSize}
+              onChange={formikAdd.handleChange}
+              onBlur={formikAdd.handleBlur}
+              fullWidth
+              margin="normal"
+              error={
+                formikAdd.touched.teamSize && Boolean(formikAdd.errors.teamSize)
+              }
+              helperText={
+                formikAdd.touched.teamSize && formikAdd.errors.teamSize
+              }
+            />
+            <TextField
+              label={
+                <span>
+                  Year <span style={{ color: "red" }}>*</span>
+                </span>
+              }
+              name="year"
+              value={formikAdd.values.year}
+              onChange={formikAdd.handleChange}
+              onBlur={formikAdd.handleBlur}
+              fullWidth
+              margin="normal"
+              error={formikAdd.touched.year && Boolean(formikAdd.errors.year)}
+              helperText={formikAdd.touched.year && formikAdd.errors.year}
+            />
+            <div style={{ marginTop: "10px" }}>
+              <Button className="modal-button save-button" type="submit">
+                Add Project
+              </Button>
+              <Button
+                className="modal-button cancel-button"
+                onClick={() => setShowAddModal(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
         </Box>
       </Modal>
     </div>
   );
-};
-
-const modalStyle = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  width: 400,
-  bgcolor: "background.paper",
-  boxShadow: 24,
-  p: 4,
-  borderRadius: 2,
 };
 
 export default Table;
