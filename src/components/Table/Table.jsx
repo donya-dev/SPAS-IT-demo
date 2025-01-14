@@ -1,15 +1,19 @@
 import { DataGrid } from "@mui/x-data-grid";
 import React, { useState, useMemo } from "react";
-import IconButton from "@mui/material/IconButton";
+import {
+  IconButton,
+  Button,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  TextField,
+  Modal,
+  Box,
+  Typography,
+} from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import Button from "@mui/material/Button";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
-import InputLabel from "@mui/material/InputLabel";
-import FormControl from "@mui/material/FormControl";
-import TextField from "@mui/material/TextField";
-import Alert from "@mui/material/Alert";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 
@@ -60,7 +64,9 @@ const Table = () => {
   const [rows, setRows] = useState(initialRows);
   const [pageSize, setPageSize] = useState(5);
   const [editingRow, setEditingRow] = useState(null);
-  const [showAddRowForm, setShowAddRowForm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteRowId, setDeleteRowId] = useState(null);
 
   const projectTypes = useMemo(() => ["AI", "WEB", "MOBILE", "GIS"], []);
   const departments = useMemo(() => ["CS", "MMT", "GIS"], []);
@@ -87,7 +93,7 @@ const Table = () => {
             </IconButton>
             <IconButton
               color="error"
-              onClick={() => handleDeleteRow(params.id)}
+              onClick={() => handleOpenDeleteModal(params.id)}
             >
               <DeleteIcon />
             </IconButton>
@@ -95,22 +101,23 @@ const Table = () => {
         ),
       },
     ],
-    []
+    [rows]
   );
 
-  const handleDeleteRow = (id) => {
-    const confirmation = window.confirm(
-      "Are you sure you want to delete this row?"
-    );
-    if (confirmation) {
-      const newRows = rows.filter((row) => row.id !== id);
-      setRows(newRows);
-    }
+  const handleOpenDeleteModal = (id) => {
+    setDeleteRowId(id);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteRow = () => {
+    setRows(rows.filter((row) => row.id !== deleteRowId));
+    setShowDeleteModal(false);
   };
 
   const handleEditRow = (id) => {
     const rowToEdit = rows.find((row) => row.id === id);
     setEditingRow(rowToEdit);
+    setShowEditModal(true);
   };
 
   const handleEditingRowChange = (e) => {
@@ -122,170 +129,12 @@ const Table = () => {
   };
 
   const handleUpdateRow = () => {
-    const confirmation = window.confirm(
-      "Are you sure you want to apply the changes?"
-    );
-    if (confirmation) {
-      const updatedRows = rows.map((row) =>
-        row.id === editingRow.id ? { ...editingRow } : row
-      );
-      setRows(updatedRows);
-      setEditingRow(null);
-    }
+    setRows(rows.map((row) => (row.id === editingRow.id ? editingRow : row)));
+    setShowEditModal(false);
   };
-
-  const formik = useFormik({
-    initialValues: {
-      projectName: "",
-      teamSize: "",
-      projectType: "",
-      department: "",
-      year: "",
-    },
-    validationSchema: Yup.object({
-      projectName: Yup.string().required("Project name is required"),
-      teamSize: Yup.number()
-        .required("Team size is required")
-        .positive()
-        .integer(),
-      projectType: Yup.string().required("Project type is required"),
-      department: Yup.string().required("Department is required"),
-      year: Yup.number()
-        .required("Year is required")
-        .min(2020, "Year must be 2020 or later")
-        .max(2025, "Year can't be later than 2025"),
-    }),
-    onSubmit: (values) => {
-      const confirmation = window.confirm(
-        "Are you sure you want to add this row?"
-      );
-      if (confirmation) {
-        const newRowWithId = { id: rows.length + 1, ...values };
-        setRows([...rows, newRowWithId]);
-        formik.resetForm();
-        setShowAddRowForm(false);
-      }
-    },
-  });
 
   return (
     <div style={{ padding: "20px" }}>
-      {!showAddRowForm && (
-        <Button
-          variant="contained"
-          onClick={() => setShowAddRowForm(true)}
-          color="primary"
-        >
-          Add Project
-        </Button>
-      )}
-
-      {showAddRowForm && (
-        <div>
-          <h3>Add New Row</h3>
-          {formik.errors.projectName ||
-          formik.errors.year ||
-          formik.errors.teamSize ? (
-            <Alert severity="error">
-              {Object.values(formik.errors).join(", ")}
-            </Alert>
-          ) : null}
-          <form onSubmit={formik.handleSubmit}>
-            <TextField
-              label="Project Name"
-              name="projectName"
-              value={formik.values.projectName}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              fullWidth
-              margin="normal"
-              error={
-                formik.touched.projectName && Boolean(formik.errors.projectName)
-              }
-              helperText={
-                formik.touched.projectName && formik.errors.projectName
-              }
-            />
-            <TextField
-              label="Team Size"
-              name="teamSize"
-              type="number"
-              value={formik.values.teamSize}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              fullWidth
-              margin="normal"
-              error={formik.touched.teamSize && Boolean(formik.errors.teamSize)}
-              helperText={formik.touched.teamSize && formik.errors.teamSize}
-            />
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Project Type</InputLabel>
-              <Select
-                name="projectType"
-                value={formik.values.projectType}
-                onChange={formik.handleChange}
-                label="Project Type"
-                onBlur={formik.handleBlur}
-                error={
-                  formik.touched.projectType &&
-                  Boolean(formik.errors.projectType)
-                }
-              >
-                {projectTypes.map((type) => (
-                  <MenuItem key={type} value={type}>
-                    {type}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Department</InputLabel>
-              <Select
-                name="department"
-                value={formik.values.department}
-                onChange={formik.handleChange}
-                label="Department"
-                onBlur={formik.handleBlur}
-                error={
-                  formik.touched.department && Boolean(formik.errors.department)
-                }
-              >
-                {departments.map((dept) => (
-                  <MenuItem key={dept} value={dept}>
-                    {dept}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <TextField
-              label="Year"
-              name="year"
-              type="number"
-              value={formik.values.year}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              fullWidth
-              margin="normal"
-              error={formik.touched.year && Boolean(formik.errors.year)}
-              helperText={formik.touched.year && formik.errors.year}
-            />
-            <div style={{ marginTop: "10px" }}>
-              <Button variant="contained" color="secondary" type="submit">
-                Confirm Add
-              </Button>
-              <Button
-                variant="outlined"
-                color="default"
-                onClick={() => setShowAddRowForm(false)}
-                style={{ marginLeft: "10px" }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </div>
-      )}
-
       <div style={{ height: 400, width: "100%", marginTop: "20px" }}>
         <DataGrid
           rows={rows}
@@ -293,12 +142,115 @@ const Table = () => {
           pageSize={pageSize}
           rowsPerPageOptions={[5, 10, 15]}
           checkboxSelection
-          sx={{ border: 0 }}
           onPageSizeChange={(newSize) => setPageSize(newSize)}
         />
       </div>
+
+      {/* Edit Modal */}
+      <Modal open={showEditModal} onClose={() => setShowEditModal(false)}>
+        <Box sx={modalStyle}>
+          <Typography variant="h6">Edit Row</Typography>
+          <TextField
+            label="Project Name"
+            name="projectName"
+            value={editingRow?.projectName || ""}
+            onChange={handleEditingRowChange}
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="Team Size"
+            name="teamSize"
+            type="number"
+            value={editingRow?.teamSize || ""}
+            onChange={handleEditingRowChange}
+            fullWidth
+            margin="normal"
+          />
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Project Type</InputLabel>
+            <Select
+              name="projectType"
+              value={editingRow?.projectType || ""}
+              onChange={handleEditingRowChange}
+            >
+              {projectTypes.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Department</InputLabel>
+            <Select
+              name="department"
+              value={editingRow?.department || ""}
+              onChange={handleEditingRowChange}
+            >
+              {departments.map((dept) => (
+                <MenuItem key={dept} value={dept}>
+                  {dept}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            label="Year"
+            name="year"
+            type="number"
+            value={editingRow?.year || ""}
+            onChange={handleEditingRowChange}
+            fullWidth
+            margin="normal"
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleUpdateRow}
+            style={{ marginTop: "10px" }}
+          >
+            Save Changes
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal open={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
+        <Box sx={modalStyle}>
+          <Typography variant="h6">Confirm Delete</Typography>
+          <Typography>Are you sure you want to delete this row?</Typography>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDeleteRow}
+            style={{ marginTop: "10px" }}
+          >
+            Delete
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => setShowDeleteModal(false)}
+            style={{ marginLeft: "10px", marginTop: "10px" }}
+          >
+            Cancel
+          </Button>
+        </Box>
+      </Modal>
     </div>
   );
+};
+
+const modalStyle = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  width: 400,
+  bgcolor: "background.paper",
+  boxShadow: 24,
+  p: 4,
+  borderRadius: 2,
 };
 
 export default Table;
