@@ -21,6 +21,7 @@ const Table = () => {
       projectType: "AI",
       department: "CS",
       year: "2023/2024",
+      pdf: "",
     },
     {
       id: 2,
@@ -29,6 +30,7 @@ const Table = () => {
       projectType: "WEB",
       department: "CS",
       year: "2022/2023",
+      pdf: "",
     },
     {
       id: 3,
@@ -37,6 +39,7 @@ const Table = () => {
       projectType: "GIS",
       department: "GIS",
       year: "2021/2022",
+      pdf: "",
     },
     {
       id: 4,
@@ -45,6 +48,7 @@ const Table = () => {
       projectType: "MOBILE",
       department: "MMT",
       year: "2020/2021",
+      pdf: "",
     },
     {
       id: 5,
@@ -53,6 +57,7 @@ const Table = () => {
       projectType: "AI",
       department: "CS",
       year: "2024/2025",
+      pdf: "",
     },
   ];
 
@@ -77,6 +82,11 @@ const Table = () => {
         }
       )
       .required("Year is required"),
+    pdf: Yup.mixed()
+      .test("fileType", "Only PDF files are allowed", (value) => {
+        return value ? value.type === "application/pdf" : true;
+      })
+      .nullable(),
   });
 
   const handleEditRow = (row) => {
@@ -103,6 +113,7 @@ const Table = () => {
       projectName: editingRow?.projectName || "",
       teamSize: editingRow?.teamSize || "",
       year: editingRow?.year || "",
+      pdf: editingRow?.pdf || "",
     },
     enableReinitialize: true,
     validationSchema,
@@ -121,6 +132,7 @@ const Table = () => {
       projectName: "",
       teamSize: "",
       year: "",
+      pdf: null,
     },
     validationSchema,
     onSubmit: (values) => {
@@ -143,6 +155,19 @@ const Table = () => {
       { field: "projectType", headerName: "Project Type", width: 130 },
       { field: "department", headerName: "Department", width: 150 },
       { field: "year", headerName: "Year", width: 130 },
+      {
+        field: "pdf",
+        headerName: "PDF",
+        width: 130,
+        renderCell: (params) =>
+          params.value ? (
+            <a href={params.value} target="_blank" rel="noopener noreferrer">
+              View PDF
+            </a>
+          ) : (
+            "No File"
+          ),
+      },
       {
         field: "action",
         headerName: "Action",
@@ -256,6 +281,20 @@ const Table = () => {
               error={formikEdit.touched.year && Boolean(formikEdit.errors.year)}
               helperText={formikEdit.touched.year && formikEdit.errors.year}
             />
+            <TextField
+              label="Upload PDF"
+              name="pdf"
+              type="file"
+              fullWidth
+              margin="normal"
+              onChange={(event) =>
+                formikEdit.setFieldValue("pdf", event.target.files[0])
+              }
+              InputLabelProps={{ shrink: true }}
+            />
+            {formikEdit.errors.pdf && (
+              <Typography color="error">{formikEdit.errors.pdf}</Typography>
+            )}
             <div style={{ marginTop: "10px" }}>
               <Button className="modal-button save-button" type="submit">
                 Save Changes
@@ -353,6 +392,20 @@ const Table = () => {
               error={formikAdd.touched.year && Boolean(formikAdd.errors.year)}
               helperText={formikAdd.touched.year && formikAdd.errors.year}
             />
+            <TextField
+              label="Upload PDF"
+              name="pdf"
+              type="file"
+              fullWidth
+              margin="normal"
+              onChange={(event) =>
+                formikAdd.setFieldValue("pdf", event.target.files[0])
+              }
+              InputLabelProps={{ shrink: true }}
+            />
+            {formikAdd.errors.pdf && (
+              <Typography color="error">{formikAdd.errors.pdf}</Typography>
+            )}
             <div style={{ marginTop: "10px" }}>
               <Button className="modal-button save-button" type="submit">
                 Add Project
